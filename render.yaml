@@ -5,6 +5,8 @@ services:
   - type: web
     name: football-prono-backend
     env: node
+    branch: main
+    autoDeploy: true
     rootDir: football_prono_backend
     buildCommand: npm install
     startCommand: node index.js
@@ -33,6 +35,8 @@ services:
   - type: static
     name: football-prono-frontend
     env: static
+    branch: main
+    autoDeploy: true
     rootDir: football_prono_frontend_react
     buildCommand: npm install && npm run build
     publishDir: dist
