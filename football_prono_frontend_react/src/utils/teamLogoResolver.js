@@ -47,11 +47,19 @@ const TOP_CLUBS_LOGOS = {
   'bayern munich': 'https://upload.wikimedia.org/wikipedia/commons/thumb/1/1b/FC_Bayern_M%C3%BCnchen_logo_%282017%29.svg/200px-FC_Bayern_M%C3%BCnchen_logo_%282017%29.svg.png',
   'dortmund': 'https://upload.wikimedia.org/wikipedia/commons/thumb/6/67/Borussia_Dortmund_logo.svg/200px-Borussia_Dortmund_logo.svg.png',
   'bayer leverkusen': 'https://upload.wikimedia.org/wikipedia/fr/thumb/3/30/Bayer_Leverkusen_%28logo%29.svg/200px-Bayer_Leverkusen_%28logo%29.svg.png',
-  'rb leipzig': 'https://upload.wikimedia.org/wikipedia/en/thumb/0/04/RB_Leipzig_2014_logo.svg/200px-RB_Leipzig_2014_logo.svg.png'
+  'rb leipzig': 'https://upload.wikimedia.org/wikipedia/en/thumb/0/04/RB_Leipzig_2014_logo.svg/200px-RB_Leipzig_2014_logo.svg.png',
+
+  // Sélections Nationales
+  'allemagne': 'https://upload.wikimedia.org/wikipedia/commons/thumb/3/38/DFB-Logo_2011.svg/200px-DFB-Logo_2011.svg.png',
+  'cote d\'ivoire': 'https://upload.wikimedia.org/wikipedia/commons/thumb/f/fe/Flag_of_C%C3%B4te_d%27Ivoire.svg/200px-Flag_of_C%C3%B4te_d%27Ivoire.svg.png'
 };
 
 // Aliases pour normaliser les variantes de noms (désambiguïsation) vers une clé de base
 const TEAM_ALIASES = {
+  'germany': 'allemagne',
+  'côte d\'ivoire': 'cote d\'ivoire',
+  'côte d’ivoire': 'cote d\'ivoire',
+  'ivory coast': 'cote d\'ivoire',
   'paris sg': 'psg',
   'paris saint germain': 'psg',
   'paris saint-germain': 'psg',

@@ -60,22 +60,7 @@ export default function Landing() {
       {/* HERO SECTION */}
       <section style={{ padding: "80px 0 60px 0", position: "relative" }}>
         <div className="container" style={{ textAlign: "center", maxWidth: "800px" }}>
-          <span style={{
-            fontSize: "11px",
-            textTransform: "uppercase",
-            letterSpacing: "0.2em",
-            color: "var(--neon-green)",
-            fontFamily: "var(--font-title)",
-            fontWeight: 600,
-            border: "1px solid rgba(204, 255, 0, 0.2)",
-            padding: "4px 12px",
-            borderRadius: "20px",
-            backgroundColor: "rgba(204, 255, 0, 0.03)",
-            display: "inline-block",
-            marginBottom: "24px"
-          }}>
-            Modèle Quantitatif Prédictif v3.5
-          </span>
+
           <h1 style={{
             fontSize: "56px",
             lineHeight: "1.1",
@@ -275,7 +260,7 @@ export default function Landing() {
                       <div className="card-title-tech" style={{ fontSize: "9px" }}>Arbitrage Recommandé (Risque Faible)</div>
                     </div>
                     <p style={{ color: "var(--text-white)", fontSize: "13px", fontWeight: 500 }}>
-                      Double chance : Allemagne ou Nul & Plus de 1.5 buts cumulés.
+                      Double chance : Allemagne ou Nul & Plus de 1.5 buts cumulés. La corrélation des xG indique un taux de couverture statistique de 75%.
                     </p>
                   </div>
                   <div className="card-tactical danger-seat-card" style={{ padding: "16px" }}>
@@ -283,7 +268,7 @@ export default function Landing() {
                       <div className="card-title-tech" style={{ fontSize: "9px", color: "var(--neon-red)" }}>Zone d'Exposition Élevée (À Éviter)</div>
                     </div>
                     <p style={{ color: "var(--text-white)", fontSize: "13px", fontWeight: 500 }}>
-                      Pari simple Allemagne sec. La Côte d'Ivoire a dominé la première mi-temps et le match s'est joué sur un contre à la dernière minute.
+                      Pari simple Allemagne sec. La forte possession projetée de l'Allemagne (59%) combinée à l'efficacité de la Côte d'Ivoire en transition rapide présente un risque élevé de contre-attaque décisive.
                     </p>
                   </div>
                 </div>
