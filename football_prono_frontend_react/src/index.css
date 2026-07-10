@@ -1,0 +1,439 @@
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,300..800;1,300..800&family=Space+Grotesk:wght@300..700&display=swap');
+
+/* --- DESIGN SYSTEM : THE TACTICAL TERMINAL --- */
+:root {
+  --bg-obsidian: #080A0F;       /* 60% - Fond principal */
+  --bg-slate: #121620;          /* 30% - Conteneurs, cartes */
+  --bg-technical: #1E2330;      /* Éléments interactifs et bordures */
+  --border-color: rgba(148, 163, 184, 0.12); /* Lignes de 1px fines */
+  --border-focus: rgba(204, 255, 0, 0.4);
+  
+  --text-white: #FFFFFF;        /* Titres majeurs, chiffres clés */
+  --text-silver: #94A3B8;       /* Texte secondaire et explications */
+  
+  --neon-green: #CCFF00;        /* 10% - Accent principal */
+  --neon-green-glow: rgba(204, 255, 0, 0.15);
+  --neon-green-dim: rgba(204, 255, 0, 0.6);
+  
+  --neon-red: #FF3B30;          /* Alertes, paris à éviter */
+  --neon-red-glow: rgba(255, 59, 48, 0.15);
+  
+  --font-title: 'Space Grotesk', sans-serif;
+  --font-body: 'Plus Jakarta Sans', sans-serif;
+  
+  --transition-smooth: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* --- RESET & BASIC STYLES --- */
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  background-color: var(--bg-obsidian);
+  color: var(--text-silver);
+  font-family: var(--font-body);
+  font-size: 14px;
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  overflow-x: hidden;
+}
+
+/* Grille tactique de fond discrète */
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  background-size: 40px 40px;
+  background-image: 
+    linear-gradient(to right, rgba(148, 163, 184, 0.02) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(148, 163, 184, 0.02) 1px, transparent 1px);
+  pointer-events: none;
+}
+
+/* Typographie */
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-title);
+  color: var(--text-white);
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+
+a {
+  color: var(--neon-green);
+  text-decoration: none;
+  transition: var(--transition-smooth);
+}
+
+a:hover {
+  text-shadow: 0 0 8px var(--neon-green-glow);
+}
+
+/* --- UTILITIES & LAYOUTS --- */
+.container {
+  width: 100%;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 24px;
+}
+
+/* Alignement Flex & Grilles */
+.flex-between {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.grid-cols-2 {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 20px;
+}
+
+@media (max-width: 768px) {
+  .grid-cols-2 {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* --- LE TERMINAL MODULES (ATOMIC DESIGN) --- */
+
+/* Cartes tactiques */
+.card-tactical {
+  background-color: var(--bg-slate);
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  padding: 24px;
+  position: relative;
+  overflow: hidden;
+  transition: var(--transition-smooth);
+}
+
+.card-tactical:hover {
+  border-color: rgba(204, 255, 0, 0.25);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+}
+
+/* En-têtes techniques de cartes */
+.card-header-tech {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid var(--border-color);
+  padding-bottom: 12px;
+  margin-bottom: 20px;
+}
+
+.card-title-tech {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--text-silver);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.card-title-tech::before {
+  content: "";
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  background-color: var(--neon-green);
+  border-radius: 50%;
+  box-shadow: 0 0 8px var(--neon-green);
+}
+
+/* Boutons */
+.btn-neon {
+  background-color: var(--neon-green);
+  color: var(--bg-obsidian);
+  font-family: var(--font-title);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding: 12px 24px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  transition: var(--transition-smooth);
+}
+
+.btn-neon:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 0 20px var(--neon-green-glow);
+  background-color: #d8ff33;
+}
+
+.btn-neon:disabled {
+  background-color: var(--bg-technical);
+  color: rgba(148, 163, 184, 0.4);
+  cursor: not-allowed;
+}
+
+.btn-outline {
+  background-color: transparent;
+  color: var(--text-white);
+  border: 1px solid var(--border-color);
+  font-family: var(--font-title);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding: 12px 24px;
+  border-radius: 4px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  transition: var(--transition-smooth);
+}
+
+.btn-outline:hover {
+  border-color: var(--text-white);
+  background-color: rgba(255, 255, 255, 0.03);
+}
+
+/* Champs de saisie */
+.input-tactical {
+  background-color: var(--bg-obsidian);
+  border: 1px solid var(--border-color);
+  color: var(--text-white);
+  font-family: var(--font-body);
+  padding: 14px 18px;
+  border-radius: 4px;
+  width: 100%;
+  outline: none;
+  transition: var(--transition-smooth);
+}
+
+.input-tactical:focus {
+  border-color: var(--neon-green);
+  box-shadow: 0 0 10px rgba(204, 255, 0, 0.1);
+}
+
+.input-tactical::placeholder {
+  color: rgba(148, 163, 184, 0.4);
+}
+
+/* --- COMPOSANTS DE VISUALISATION STATISTIQUE --- */
+
+/* Barre de comparaison (ex: 1X2, BTTS) */
+.stat-bar-container {
+  margin-bottom: 16px;
+}
+
+.stat-bar-labels {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 6px;
+  font-family: var(--font-title);
+  font-weight: 600;
+  font-size: 13px;
+}
+
+.stat-bar-track {
+  height: 8px;
+  background-color: var(--bg-technical);
+  border-radius: 2px;
+  overflow: hidden;
+  position: relative;
+}
+
+.stat-bar-fill {
+  height: 100%;
+  background-color: var(--neon-green);
+  border-radius: 2px;
+  transition: width 1s cubic-bezier(0.16, 1, 0.3, 1);
+  box-shadow: 0 0 8px var(--neon-green);
+}
+
+/* Barre de comparaison 1X2 (Triple répartition) */
+.distrib-bar {
+  display: flex;
+  height: 12px;
+  border-radius: 3px;
+  overflow: hidden;
+  margin: 15px 0;
+  background-color: var(--bg-technical);
+}
+
+.distrib-segment {
+  height: 100%;
+  transition: width 1s cubic-bezier(0.16, 1, 0.3, 1);
+  position: relative;
+}
+
+.distrib-dom {
+  background-color: var(--neon-green);
+  box-shadow: inset -1px 0 0 rgba(0,0,0,0.2);
+}
+
+.distrib-nul {
+  background-color: var(--text-silver);
+  box-shadow: inset -1px 0 0 rgba(0,0,0,0.2);
+}
+
+.distrib-ext {
+  background-color: var(--bg-technical);
+  border: 1px solid rgba(148, 163, 184, 0.3);
+}
+
+/* Jauge circulaire (pour la confiance AI) */
+.circle-gauge-container {
+  position: relative;
+  width: 120px;
+  height: 120px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.circle-gauge-svg {
+  transform: rotate(-90deg);
+  width: 100%;
+  height: 100%;
+}
+
+.circle-gauge-bg {
+  fill: none;
+  stroke: var(--bg-technical);
+  stroke-width: 6;
+}
+
+.circle-gauge-fill {
+  fill: none;
+  stroke: var(--neon-green);
+  stroke-width: 6;
+  stroke-linecap: round;
+  transition: stroke-dashoffset 1.5s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.circle-gauge-text {
+  position: absolute;
+  font-family: var(--font-title);
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--text-white);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  line-height: 1;
+}
+
+.circle-gauge-label {
+  font-family: var(--font-body);
+  font-size: 9px;
+  text-transform: uppercase;
+  color: var(--text-silver);
+  margin-top: 4px;
+}
+
+/* --- COPIES ÉDITORIALES FINANCIÈRES & BLOCS SÉCURISÉS --- */
+
+/* Safe Seat : carte à fort contraste pour recommandations */
+.safe-seat-card {
+  background: linear-gradient(135deg, rgba(204, 255, 0, 0.03) 0%, rgba(204, 255, 0, 0.08) 100%);
+  border: 1px solid var(--neon-green);
+  box-shadow: 0 0 15px rgba(204, 255, 0, 0.05);
+}
+
+.safe-seat-card .card-title-tech::before {
+  background-color: var(--neon-green);
+  box-shadow: 0 0 8px var(--neon-green);
+}
+
+/* Danger Zone : carte à fort contraste pour les risques à éviter */
+.danger-seat-card {
+  background: linear-gradient(135deg, rgba(255, 59, 48, 0.02) 0%, rgba(255, 59, 48, 0.06) 100%);
+  border: 1px solid var(--neon-red);
+  box-shadow: 0 0 15px rgba(255, 59, 48, 0.05);
+}
+
+.danger-seat-card .card-title-tech::before {
+  background-color: var(--neon-red);
+  box-shadow: 0 0 8px var(--neon-red);
+}
+
+/* Tableaux Techniques */
+.tech-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 10px;
+}
+
+.tech-table th {
+  font-family: var(--font-title);
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-silver);
+  text-align: left;
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.tech-table td {
+  padding: 12px;
+  border-bottom: 1px solid rgba(148, 163, 184, 0.05);
+  font-family: var(--font-body);
+}
+
+.tech-table tr:last-child td {
+  border-bottom: none;
+}
+
+/* --- ANIMATIONS & LOADERS --- */
+@keyframes pulse-slow {
+  0%, 100% { opacity: 0.4; }
+  50% { opacity: 0.8; }
+}
+
+.skeleton-shimmer {
+  background: linear-gradient(
+    90deg,
+    var(--bg-slate) 25%,
+    var(--bg-technical) 37%,
+    var(--bg-slate) 63%
+  );
+  background-size: 400% 100%;
+  animation: shimmer 1.4s ease infinite;
+}
+
+@keyframes shimmer {
+  0% { background-position: 100% 50%; }
+  100% { background-position: 0 50%; }
+}
+
+/* Logs de chargement */
+.terminal-log-line {
+  font-family: monospace;
+  font-size: 12px;
+  color: #39FF14; /* Vert phosphoreux */
+  margin-bottom: 8px;
+  white-space: nowrap;
+  overflow: hidden;
+  border-right: 2px solid transparent;
+}
+
+.terminal-log-line.active {
+  animation: typing 1.5s steps(40, end), blink-caret 0.75s step-end infinite;
+}
+
+@keyframes typing {
+  from { width: 0 }
+  to { width: 100% }
+}
+
+@keyframes blink-caret {
+  from, to { border-color: transparent }
+  50% { border-color: #39FF14; }
+}
