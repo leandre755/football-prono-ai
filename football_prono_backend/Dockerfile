@@ -11,8 +11,8 @@ WORKDIR /app
 # Copier package.json et package-lock.json
 COPY package*.json ./
 
-# Installer uniquement les dépendances de production
-RUN npm ci --omit=dev
+# Installer uniquement les dépendances de production et compiler sqlite3 depuis les sources
+RUN npm ci --omit=dev && npm rebuild sqlite3 --build-from-source
 
 # Copier le reste de l'application
 COPY . .
