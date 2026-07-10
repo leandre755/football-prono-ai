@@ -1,7 +1,51 @@
 const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:3000";
 
 /**
+ * Durées de timeout (ms) par catégorie d'endpoint.
+ * - AUTH : 45s — le backend Render (plan gratuit) peut mettre 30-50s à sortir de veille (cold start).
+ * - ANALYSIS : 90s — le scraping 365Scores + l'appel Gemini prennent du temps.
+ * - DEFAULT : 45s — marge suffisante pour le cold start sur les autres routes.
+ */
+const TIMEOUT_MS = {
+  AUTH: 45_000,
+  ANALYSIS: 90_000,
+  DEFAULT: 45_000,
+};
+
+/**
+ * Identifie la catégorie d'un endpoint pour adapter le timeout et les messages d'erreur.
+ * @param {string} endpoint — chemin de l'API (ex: "/api/auth/login")
+ * @returns {"AUTH" | "ANALYSIS" | "DEFAULT"}
+ */
+function classifyEndpoint(endpoint) {
+  if (endpoint.startsWith("/api/auth")) {
+    return "AUTH";
+  }
+  if (endpoint.includes("/predictions/analyser") || endpoint.includes("/api/analyser")) {
+    return "ANALYSIS";
+  }
+  return "DEFAULT";
+}
+
+/**
+ * Construit un message d'erreur de timeout adapté au contexte de l'endpoint.
+ * @param {"AUTH" | "ANALYSIS" | "DEFAULT"} category
+ * @returns {string}
+ */
+function buildTimeoutMessage(category) {
+  switch (category) {
+    case "AUTH":
+      return "Le serveur met du temps à répondre (il sort probablement de veille). Veuillez réessayer dans quelques secondes.";
+    case "ANALYSIS":
+      return "La requête a expiré (Timeout). Le traitement du match par l'IA a pris trop de temps. Réessayez ou vérifiez l'URL du match.";
+    default:
+      return "Le serveur n'a pas répondu à temps. Veuillez réessayer dans quelques instants.";
+  }
+}
+
+/**
  * Service HTTP générique pour centraliser les appels API avec gestion des tokens JWT.
+ * Le timeout et le message d'erreur s'adaptent automatiquement au type d'endpoint.
  */
 async function request(endpoint, options = {}) {
   const token = localStorage.getItem("token");
@@ -15,15 +59,17 @@ async function request(endpoint, options = {}) {
     headers["Authorization"] = `Bearer ${token}`;
   }
   
+  const category = classifyEndpoint(endpoint);
+  const timeoutDuration = TIMEOUT_MS[category];
+  
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), timeoutDuration);
+  
   const config = {
     ...options,
     headers,
+    signal: controller.signal,
   };
-  
-  // Implémentation d'un timeout par défaut (ex: 20 secondes, utile pour le scraping lourd)
-  const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), 25000);
-  config.signal = controller.signal;
   
   try {
     const response = await fetch(`${API_BASE_URL}${endpoint}`, config);
@@ -53,15 +99,24 @@ async function request(endpoint, options = {}) {
     return data;
   } catch (error) {
     clearTimeout(timeoutId);
+
+    // Timeout explicite (AbortController) → message contextuel
     if (error.name === "AbortError") {
-      throw new Error("La requête a expiré (Timeout). Le traitement du match par l'IA a pris trop de temps.");
+      throw new Error(buildTimeoutMessage(category));
     }
-    // Conserver les erreurs déjà formatées
+
+    // Erreur réseau brute (backend totalement injoignable)
+    if (error instanceof TypeError && error.message.includes("fetch")) {
+      throw new Error("Impossible de joindre le serveur. Il est peut-être en cours de démarrage ou temporairement indisponible. Réessayez dans 30 secondes.");
+    }
+
+    // Conserver les erreurs déjà formatées par les blocs if (!response.ok) ci-dessus
     if (error.message) {
       throw error;
     }
-    // Erreur réseau générique
-    throw new Error("Une erreur de connexion est survenue. Nous en sommes désolés, c'est de notre faute. Veuillez réessayer dans quelques instants.");
+
+    // Dernier recours — erreur inconnue
+    throw new Error("Une erreur inattendue est survenue. Veuillez réessayer dans quelques instants.");
   }
 }
 
