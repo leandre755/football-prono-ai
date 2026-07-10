@@ -1,12 +1,14 @@
 import { verifyToken } from "../services/authService.js";
+import { findUserById } from "../models/userModel.js";
 
 /**
  * Middleware qui sécurise une route en vérifiant la présence
- * et la validité d'un token JWT dans les en-têtes de la requête.
+ * et la validité d'un token JWT dans les en-têtes de la requête,
+ * ainsi que son existence en base de données.
  * 
  * En-tête attendu : Authorization: Bearer <token>
  */
-export default function authMiddleware(req, res, next) {
+export default async function authMiddleware(req, res, next) {
   const authHeader = req.headers["authorization"];
 
   if (!authHeader) {
@@ -27,6 +29,15 @@ export default function authMiddleware(req, res, next) {
 
   try {
     const decoded = verifyToken(token);
+    
+    // Vérification stricte de l'existence de l'utilisateur dans la base de données
+    const user = await findUserById(decoded.id);
+    if (!user) {
+      return res.status(401).json({
+        message: "Votre compte n'a pas été trouvé (base de données réinitialisée). Veuillez vous ré-inscrire.",
+      });
+    }
+
     // On injecte les infos utilisateur décodées (id, email) dans l'objet req
     req.user = decoded;
     next();
