@@ -17,15 +17,8 @@ services:
         sync: false # À configurer dans le tableau de bord Render avec votre clé API Gemini
       - key: JWT_SECRET
         generateValue: true # Clé JWT sécurisée auto-générée par Render
-      - key: DATABASE_PATH
-        value: /opt/render/project/src/data
-    # Note : Le disque persistant nécessite un plan payant (starter).
-    # Si vous préférez utiliser l'offre gratuite (free tier), supprimez/commentez
-    # la section 'disk' ci-dessous ainsi que la variable d'environnement 'DATABASE_PATH' au-dessus.
-    disk:
-      name: football-prono-db
-      mountPath: /opt/render/project/src/data
-      sizeGB: 1
+    # Note : Le stockage persistant (disk) a été retiré pour rester 100% sur l'offre gratuite (Free Tier).
+    # Les données SQLite seront stockées sur le disque éphémère du conteneur.
 
   # ----------------------------------------------------
   # Service Frontend (Vite React)
