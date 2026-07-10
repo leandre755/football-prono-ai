@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useLocation, useParams, useNavigate, Link } from "react-router-dom";
-import { ChevronLeft, CornerDownRight, ShieldAlert } from "lucide-react";
+import { ChevronLeft, CornerDownRight, ShieldAlert, Zap } from "lucide-react";
 import { apiService } from "../services/api";
 import TeamLogo from "../components/TeamLogo";
 
@@ -23,10 +23,11 @@ export default function Report() {
         if (match) {
           setPrediction(match);
         } else {
-          setError("Rapport introuvable dans l'historique de cet utilisateur.");
+          setError("Ce rapport n'existe plus dans votre historique.");
         }
       } catch (err) {
-        setError("Échec de la récupération du rapport : " + err.message);
+        console.error("[Report.jsx] Erreur chargement rapport historique :", err.message);
+        setError("Impossible de charger ce rapport. Réessayez.");
       } finally {
         setLoading(false);
       }
@@ -140,7 +141,7 @@ export default function Report() {
                 />
               </svg>
               <div className="circle-gauge-text">
-                <span style={{ fontSize: "20px" }}>⚡</span>
+                <Zap size={20} style={{ color: "var(--neon-green)", fill: "var(--neon-green)" }} />
                 <span style={{ fontSize: "10px", textTransform: "uppercase", fontWeight: 600, color: "var(--neon-green)" }}>
                   {prediction_json.niveau_de_confiance}
                 </span>
@@ -178,28 +179,28 @@ export default function Report() {
                 <span style={{ fontSize: "10px", color: "var(--neon-green)" }}>[CALCUL FROID]</span>
               </div>
               
-              <div className="distrib-bar" style={{ height: "18px", marginBottom: "20px" }}>
+              <div className="distrib-bar" style={{ height: "18px", marginBottom: "var(--layout-gap-grid)" }}>
                 <div className="distrib-segment distrib-dom" style={{ width: `${prediction_json.resultat_1x2.victoire_domicile}%` }}></div>
                 <div className="distrib-segment distrib-nul" style={{ width: `${prediction_json.resultat_1x2.match_nul}%` }}></div>
                 <div className="distrib-segment distrib-ext" style={{ width: `${prediction_json.resultat_1x2.victoire_exterieur}%` }}></div>
               </div>
 
               <div className="grid-three-cols-small" style={{ textAlign: "center" }}>
-                <div style={{ border: "1px solid var(--border-color)", padding: "12px", borderRadius: "4px" }}>
+                <div style={{ border: "1px solid var(--border-color)", padding: "var(--space-ms)", borderRadius: "4px" }}>
                   <span style={{ fontSize: "10px", textTransform: "uppercase", color: "var(--text-silver)" }}>Victoire Hôte (1)</span>
-                  <strong style={{ display: "block", fontSize: "18px", color: "var(--neon-green)", marginTop: "4px" }}>
+                  <strong style={{ display: "block", fontSize: "18px", color: "var(--outcome-home-color)", marginTop: "var(--space-xs)" }}>
                     {prediction_json.resultat_1x2.victoire_domicile}%
                   </strong>
                 </div>
-                <div style={{ border: "1px solid var(--border-color)", padding: "12px", borderRadius: "4px" }}>
+                <div style={{ border: "1px solid var(--border-color)", padding: "var(--space-ms)", borderRadius: "4px" }}>
                   <span style={{ fontSize: "10px", textTransform: "uppercase", color: "var(--text-silver)" }}>Match Nul (X)</span>
-                  <strong style={{ display: "block", fontSize: "18px", color: "var(--text-white)", marginTop: "4px" }}>
+                  <strong style={{ display: "block", fontSize: "18px", color: "var(--outcome-draw-color)", marginTop: "var(--space-xs)" }}>
                     {prediction_json.resultat_1x2.match_nul}%
                   </strong>
                 </div>
-                <div style={{ border: "1px solid var(--border-color)", padding: "12px", borderRadius: "4px" }}>
+                <div style={{ border: "1px solid var(--border-color)", padding: "var(--space-ms)", borderRadius: "4px" }}>
                   <span style={{ fontSize: "10px", textTransform: "uppercase", color: "var(--text-silver)" }}>Victoire Visiteur (2)</span>
-                  <strong style={{ display: "block", fontSize: "18px", color: "var(--text-silver)", marginTop: "4px" }}>
+                  <strong style={{ display: "block", fontSize: "18px", color: "var(--outcome-away-color)", marginTop: "var(--space-xs)" }}>
                     {prediction_json.resultat_1x2.victoire_exterieur}%
                   </strong>
                 </div>

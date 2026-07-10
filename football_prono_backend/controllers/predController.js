@@ -5,11 +5,69 @@ import {
   getPredictionsByUserId,
   deletePrediction
 } from "../models/predModel.js";
+import { logError } from "../services/logger.js";
+
+/*
+ * ─────────────────────────────────────────────────────────────────────────────
+ *  SÉPARATION DES MESSAGES D'ERREUR
+ *
+ *  Messages INTERNES (logs serveur) : console.error / logError
+ *    → Techniques, contiennent les stack traces, codes HTTP bruts, noms de
+ *      variables d'environnement, etc. Jamais vus par l'utilisateur.
+ *
+ *  Messages UTILISATEUR (friendlyMessage → envoyés au frontend) :
+ *    → Chaleureux, clairs, sans jargon technique.
+ *    → Commencent par "Oups" si c'est une erreur de notre côté.
+ *    → Proposent toujours une action (réessayer, vérifier, patienter).
+ *    → Ne contiennent JAMAIS de error.message brut pour éviter les fuites.
+ * ─────────────────────────────────────────────────────────────────────────────
+ */
 
 /**
- * Endpoint de traitement d'un match (Scraping -> IA -> Parsing -> Persistence).
+ * Traduit un message d'erreur technique en message UX-friendly pour l'utilisateur.
+ * Le message brut reste dans les logs serveur (logError / console.error).
+ *
+ * Invariant : retourne toujours un message non-vide, sans jargon technique.
+ *
+ * @param {string} technicalMessage - Le error.message brut (usage logs uniquement)
+ * @returns {string} Message destiné à l'affichage UI
  */
-import { logError } from "../services/logger.js";
+function toUserMessage(technicalMessage) {
+  const msg = (technicalMessage || "").toLowerCase();
+
+  // IA — clé API manquante ou service indisponible
+  if (msg.includes("gemini_api_key") || msg.includes("clé d'api") || msg.includes("googlegenai") || msg.includes("non configurée")) {
+    return "Oups, notre service d'analyse est temporairement indisponible. Réessayez dans quelques minutes.";
+  }
+
+  // IA — surcharge temporaire (503 Service Unavailable)
+  if (msg.includes("503") || msg.includes("unavailable") || msg.includes("high demand") || msg.includes("overloaded")) {
+    return "Oups, l'IA est temporairement surchargée. Réessayez dans 30 secondes.";
+  }
+
+  // IA — quota épuisé (429 Too Many Requests)
+  if (msg.includes("429") || msg.includes("resource_exhausted") || msg.includes("quota")) {
+    return "Oups, nous avons atteint notre limite de requêtes pour le moment. Réessayez dans quelques minutes.";
+  }
+
+  // IA — erreur interne du modèle (500, INTERNAL, safety block)
+  if (msg.includes("500") || msg.includes("internal") || msg.includes("safety") || msg.includes("blocked")) {
+    return "Oups, l'IA n'a pas pu traiter cette demande. Réessayez ou essayez un autre match.";
+  }
+
+  // Scraping — timeout, playwright, page introuvable
+  if (msg.includes("timeout") || msg.includes("playwright") || msg.includes("navigu") || msg.includes("365scores") || msg.includes("scraping") || msg.includes("introuvable")) {
+    return "Impossible de récupérer les données de ce match. Vérifiez le lien ou réessayez dans quelques instants.";
+  }
+
+  // Parsing — validation Zod ou parsing du résultat IA
+  if (msg.includes("validation") || msg.includes("parsing") || msg.includes("zod")) {
+    return "L'analyse n'a pas produit un résultat exploitable. Réessayez.";
+  }
+
+  // Fallback — JAMAIS de message technique brut vers l'utilisateur
+  return "Oups, une erreur inattendue s'est produite. Réessayez dans quelques instants.";
+}
 
 /**
  * Endpoint de traitement d'un match (Scraping -> IA -> Parsing -> Persistence).
@@ -21,21 +79,23 @@ export async function analyzeMatch(req, res) {
   const isStream = req.body.stream === true;
 
   if (!matchUrl) {
+    const userMsg = "Veuillez coller le lien d'un match 365Scores pour lancer l'analyse.";
     if (isStream) {
       res.setHeader("Content-Type", "application/x-ndjson");
-      res.write(JSON.stringify({ type: "error", message: "L'URL du match est requise." }) + "\n");
+      res.write(JSON.stringify({ type: "error", message: userMsg }) + "\n");
       return res.end();
     }
-    return res.status(400).json({ error: "L'URL du match est requise." });
+    return res.status(400).json({ error: userMsg });
   }
 
   if (!matchUrl.includes("365scores.com")) {
+    const userMsg = "Ce lien ne provient pas de 365Scores. Vérifiez l'adresse et réessayez.";
     if (isStream) {
       res.setHeader("Content-Type", "application/x-ndjson");
-      res.write(JSON.stringify({ type: "error", message: "URL invalide. Seules les URLs 365Scores sont supportées." }) + "\n");
+      res.write(JSON.stringify({ type: "error", message: userMsg }) + "\n");
       return res.end();
     }
-    return res.status(400).json({ error: "URL invalide. Seules les URLs 365Scores sont supportées." });
+    return res.status(400).json({ error: userMsg });
   }
 
   if (isStream) {
@@ -49,15 +109,16 @@ export async function analyzeMatch(req, res) {
     };
 
     try {
-      console.log(`[predController.js] Début de l'analyse en streaming pour l'utilisateur ${userId} sur : ${matchUrl}`);
+      // LOG INTERNE — technique, invisible pour l'utilisateur
+      console.log(`[predController] Analyse stream — user:${userId} url:${matchUrl}`);
 
-      sendProgress("status", { step: "scraping", message: "On récupère les statistiques de forme du match sur 365Scores..." });
+      sendProgress("status", { step: "scraping", message: "On récupère les statistiques du match sur 365Scores..." });
       const scrapedText = await scrapeMatchData(matchUrl);
 
-      sendProgress("status", { step: "ai", message: "On calcule les probabilités de score et on projette les résultats..." });
+      sendProgress("status", { step: "ai", message: "On calcule les probabilités et on projette les résultats..." });
       const rawAiText = await callAIModel(scrapedText);
 
-      sendProgress("status", { step: "parsing", message: "On valide et on formate la modélisation statistique..." });
+      sendProgress("status", { step: "parsing", message: "On valide et on formate l'analyse..." });
       const predictionData = parseAIResponse(rawAiText);
 
       sendProgress("status", { step: "saving", message: "On enregistre l'analyse dans votre tableau de bord..." });
@@ -72,28 +133,19 @@ export async function analyzeMatch(req, res) {
       sendProgress("result", { prediction: savedPrediction });
       res.end();
     } catch (error) {
-      await logError(`Erreur lors de l'analyse en streaming pour l'utilisateur ${userId} sur ${matchUrl}`, error);
+      // LOG INTERNE — technique complet, invisible pour l'utilisateur
+      await logError(`[predController] Erreur stream — user:${userId} url:${matchUrl}`, error);
 
-      // Classification intelligente des erreurs
-      let friendlyMessage = "Une erreur inattendue est survenue.";
-      const errMsg = error.message || "";
-      if (errMsg.includes("GEMINI_API_KEY") || errMsg.includes("Clé d'API") || errMsg.includes("GoogleGenAI")) {
-        friendlyMessage = "Le service d'analyse de l'IA (Gemini) n'est pas disponible pour le moment. Veuillez vérifier la configuration de l'API.";
-      } else if (errMsg.includes("timeout") || errMsg.includes("playwright") || errMsg.includes("navigu") || errMsg.includes("365scores")) {
-        friendlyMessage = "Nous n'avons pas pu récupérer les données de ce match sur 365Scores. Vérifiez l'adresse ou réessayez.";
-      } else if (errMsg.includes("validation") || errMsg.includes("parsing") || errMsg.includes("Zod")) {
-        friendlyMessage = "Le rapport généré n'a pas pu être validé. On retente l'analyse.";
-      } else {
-        friendlyMessage = `Erreur lors de l'analyse : ${error.message}`;
-      }
-
-      sendProgress("error", { message: friendlyMessage });
+      // MESSAGE UTILISATEUR — chaleureux, sans jargon
+      const userMsg = toUserMessage(error.message);
+      sendProgress("error", { message: userMsg });
       res.end();
     }
   } else {
     // Mode synchrone classique (conservé pour rétrocompatibilité)
     try {
-      console.log(`[predController.js] Début de l'analyse synchrone pour l'utilisateur ${userId} sur : ${matchUrl}`);
+      // LOG INTERNE
+      console.log(`[predController] Analyse sync — user:${userId} url:${matchUrl}`);
 
       const scrapedText = await scrapeMatchData(matchUrl);
       const rawAiText = await callAIModel(scrapedText);
@@ -109,21 +161,12 @@ export async function analyzeMatch(req, res) {
 
       return res.status(200).json(savedPrediction);
     } catch (error) {
-      await logError(`Erreur lors de l'analyse synchrone pour l'utilisateur ${userId} sur ${matchUrl}`, error);
+      // LOG INTERNE
+      await logError(`[predController] Erreur sync — user:${userId} url:${matchUrl}`, error);
 
-      let friendlyMessage = "Erreur interne lors de l'analyse.";
-      const errMsg = error.message || "";
-      if (errMsg.includes("GEMINI_API_KEY") || errMsg.includes("Clé d'API") || errMsg.includes("GoogleGenAI")) {
-        friendlyMessage = "Le service d'analyse de l'IA (Gemini) n'est pas disponible pour le moment. Veuillez vérifier la configuration de l'API.";
-      } else if (errMsg.includes("timeout") || errMsg.includes("playwright") || errMsg.includes("navigu") || errMsg.includes("365scores")) {
-        friendlyMessage = "Nous n'avons pas pu récupérer les données de ce match sur 365Scores. Vérifiez l'adresse ou réessayez.";
-      } else if (errMsg.includes("validation") || errMsg.includes("parsing") || errMsg.includes("Zod")) {
-        friendlyMessage = "Le rapport généré n'a pas pu être validé. On retente l'analyse.";
-      } else {
-        friendlyMessage = `Erreur interne lors de l'analyse : ${error.message}`;
-      }
-
-      return res.status(500).json({ error: friendlyMessage });
+      // MESSAGE UTILISATEUR
+      const userMsg = toUserMessage(error.message);
+      return res.status(500).json({ error: userMsg });
     }
   }
 }
@@ -137,8 +180,10 @@ export async function getHistory(req, res) {
     const history = await getPredictionsByUserId(userId);
     return res.status(200).json(history);
   } catch (error) {
-    console.error("[predController.js] Erreur getHistory :", error.message);
-    return res.status(500).json({ error: "Erreur interne lors de la récupération de l'historique." });
+    // LOG INTERNE
+    console.error("[predController] Erreur getHistory :", error.message);
+    // MESSAGE UTILISATEUR
+    return res.status(500).json({ error: "Impossible de charger votre historique pour le moment. Réessayez." });
   }
 }
 
@@ -150,17 +195,19 @@ export async function deleteHistoryItem(req, res) {
   const { id } = req.params;
 
   if (!id) {
-    return res.status(400).json({ error: "L'identifiant de la prédiction est requis." });
+    return res.status(400).json({ error: "Impossible de supprimer : identifiant manquant." });
   }
 
   try {
     const deleted = await deletePrediction(parseInt(id), userId);
     if (!deleted) {
-      return res.status(404).json({ error: "Prédiction non trouvée ou non autorisée." });
+      return res.status(404).json({ error: "Cette analyse n'existe plus ou a déjà été supprimée." });
     }
-    return res.status(200).json({ message: "Prédiction supprimée avec succès de l'historique." });
+    return res.status(200).json({ message: "Analyse supprimée." });
   } catch (error) {
-    console.error("[predController.js] Erreur deleteHistoryItem :", error.message);
-    return res.status(500).json({ error: "Erreur interne lors de la suppression de la prédiction." });
+    // LOG INTERNE
+    console.error("[predController] Erreur deleteHistoryItem :", error.message);
+    // MESSAGE UTILISATEUR
+    return res.status(500).json({ error: "Impossible de supprimer cette analyse pour le moment. Réessayez." });
   }
 }

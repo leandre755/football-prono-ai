@@ -12,8 +12,22 @@ const TIMEOUT_MS = {
   DEFAULT: 45_000,
 };
 
+/*
+ * ─────────────────────────────────────────────────────────────────────────────
+ *  SÉPARATION DES MESSAGES D'ERREUR (FRONTEND)
+ *
+ *  Messages INTERNES (console.error) :
+ *    → Techniques, pour le debug développeur dans la console navigateur.
+ *
+ *  Messages UTILISATEUR (throw new Error → affiché via setError dans les pages) :
+ *    → Chaleureux, clairs, en français, sans jargon.
+ *    → "Oups" quand c'est de notre faute, pas de la leur.
+ *    → Proposent toujours une action (réessayer, vérifier, patienter).
+ * ─────────────────────────────────────────────────────────────────────────────
+ */
+
 /**
- * Identifie la catégorie d'un endpoint pour adapter le timeout et les messages d'erreur.
+ * Identifie la catégorie d'un endpoint pour adapter le timeout.
  * @param {string} endpoint — chemin de l'API (ex: "/api/auth/login")
  * @returns {"AUTH" | "ANALYSIS" | "DEFAULT"}
  */
@@ -28,23 +42,23 @@ function classifyEndpoint(endpoint) {
 }
 
 /**
- * Construit un message d'erreur de timeout adapté au contexte de l'endpoint.
+ * Construit un message d'erreur de timeout UTILISATEUR adapté au contexte.
  * @param {"AUTH" | "ANALYSIS" | "DEFAULT"} category
- * @returns {string}
+ * @returns {string} Message UX-friendly
  */
 function buildTimeoutMessage(category) {
   switch (category) {
     case "AUTH":
-      return "La connexion a pris trop de temps. Réessayez ?";
+      return "La connexion prend plus de temps que prévu. Le serveur est peut-être en train de démarrer — réessayez dans quelques secondes.";
     case "ANALYSIS":
-      return "L'analyse a pris trop de temps. Réessayez ou vérifiez le lien du match ?";
+      return "L'analyse prend plus de temps que prévu. Réessayez ou vérifiez le lien du match.";
     default:
-      return "La connexion a pris trop de temps. Réessayez ?";
+      return "La requête prend plus de temps que prévu. Réessayez dans quelques secondes.";
   }
 }
 
 /**
- * Service HTTP générique pour centraliser les appels API avec gestion des tokens JWT.
+ * Service HTTP générique avec gestion des tokens JWT.
  * Le timeout et le message d'erreur s'adaptent automatiquement au type d'endpoint.
  */
 async function request(endpoint, options = {}) {
@@ -83,40 +97,53 @@ async function request(endpoint, options = {}) {
     }
     
     if (!response.ok) {
-      const msg = data.message || data.error || "";
-      if (response.status === 409 || msg.includes("déjà enregistré") || msg.includes("déjà inscrit")) {
-        throw new Error("Cette adresse email est déjà enregistrée. Veuillez vous connecter ou utiliser une autre adresse.");
+      const serverMsg = data.message || data.error || "";
+
+      // LOG INTERNE — le développeur voit le détail dans la console
+      console.error(`[api.js] HTTP ${response.status} sur ${endpoint} :`, serverMsg);
+      
+      // MESSAGES UTILISATEUR — adaptés au code HTTP, sans jargon
+      if (response.status === 409 || serverMsg.includes("déjà enregistré") || serverMsg.includes("déjà inscrit") || serverMsg.includes("déjà utilisée")) {
+        throw new Error("Cette adresse email est déjà utilisée. Connectez-vous ou utilisez une autre adresse.");
       }
-      if (response.status === 401 || msg.includes("invalides") || msg.includes("incorrect")) {
-        throw new Error("Le mot de passe saisi ou l'email est incorrect. Veuillez réessayer.");
+      if (response.status === 401 || serverMsg.includes("invalides") || serverMsg.includes("incorrect")) {
+        throw new Error("Email ou mot de passe incorrect.");
       }
-      if (response.status === 400 || msg.includes("validation")) {
-        throw new Error("Les données saisies sont invalides. Veuillez vérifier le format de votre adresse email (ex: nom@domaine.com) et saisir un mot de passe de 6 caractères minimum.");
+      if (response.status === 400) {
+        throw new Error("Vérifiez le format de votre email et que le mot de passe fait au moins 6 caractères.");
       }
-      throw new Error(msg || "Une erreur de connexion est survenue. Nous en sommes désolés, c'est de notre faute. Veuillez réessayer dans quelques instants.");
+
+      // Si le backend a déjà envoyé un message UX-friendly (via toUserMessage),
+      // on le relaye tel quel plutôt que de le masquer
+      if (serverMsg && serverMsg.startsWith("Oups")) {
+        throw new Error(serverMsg);
+      }
+
+      // Fallback — message générique sans fuite technique
+      throw new Error(serverMsg || "Oups, quelque chose s'est mal passé. Réessayez dans quelques instants.");
     }
     
     return data;
   } catch (error) {
     clearTimeout(timeoutId);
 
-    // Timeout explicite (AbortController) → message contextuel
+    // Timeout explicite (AbortController) → MESSAGE UTILISATEUR contextuel
     if (error.name === "AbortError") {
       throw new Error(buildTimeoutMessage(category));
     }
 
-    // Erreur réseau brute (backend totalement injoignable)
+    // Erreur réseau brute (backend totalement injoignable) → MESSAGE UTILISATEUR
     if (error instanceof TypeError && error.message.includes("fetch")) {
-      throw new Error("Impossible de joindre le serveur. Réessayez dans quelques secondes ?");
+      throw new Error("Impossible de contacter le serveur. Vérifiez votre connexion internet et réessayez.");
     }
 
-    // Conserver les erreurs déjà formatées par les blocs if (!response.ok) ci-dessus
+    // Conserver les erreurs déjà formatées par les blocs ci-dessus
     if (error.message) {
       throw error;
     }
 
-    // Dernier recours — erreur inconnue
-    throw new Error("Une erreur inattendue est survenue. Veuillez réessayer dans quelques instants.");
+    // Dernier recours → MESSAGE UTILISATEUR sans fuite technique
+    throw new Error("Oups, une erreur inattendue s'est produite. Réessayez.");
   }
 }
 
@@ -168,7 +195,11 @@ export const apiService = {
       
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.error || errorData.message || "Une erreur réseau est survenue.");
+        // LOG INTERNE
+        console.error("[api.js] Erreur stream HTTP :", response.status, errorData);
+        // MESSAGE UTILISATEUR — relaye le message UX du backend ou fallback
+        const serverMsg = errorData.error || errorData.message || "";
+        throw new Error(serverMsg || "Oups, le serveur a rencontré un problème. Réessayez.");
       }
       
       const reader = response.body.getReader();
@@ -181,7 +212,7 @@ export const apiService = {
         
         buffer += decoder.decode(value, { stream: true });
         const lines = buffer.split("\n");
-        buffer = lines.pop(); // Conserver la dernière ligne potentiellement incomplète dans le buffer
+        buffer = lines.pop(); // Conserver la dernière ligne potentiellement incomplète
         
         for (const line of lines) {
           if (!line.trim()) continue;
@@ -192,10 +223,12 @@ export const apiService = {
             } else if (data.type === "result") {
               onResult(data.prediction);
             } else if (data.type === "error") {
+              // Le backend a déjà traduit via toUserMessage — on relaye tel quel
               onError(new Error(data.message));
             }
-          } catch {
-            console.error("Erreur parsing ligne stream :", e, line);
+          } catch (parseErr) {
+            // LOG INTERNE uniquement
+            console.error("[api.js] Erreur parsing ligne stream :", parseErr, line);
           }
         }
       }

@@ -2,26 +2,118 @@
 
 /* --- DESIGN SYSTEM : THE TACTICAL TERMINAL --- */
 :root {
-  --bg-obsidian: #080A0F;       /* 60% - Fond principal */
-  --bg-slate: #121620;          /* 30% - Conteneurs, cartes */
-  --bg-technical: #1E2330;      /* Éléments interactifs et bordures */
-  --border-color: rgba(148, 163, 184, 0.12); /* Lignes de 1px fines */
+  /* ========================================== */
+  /* LEVEL 1: PRIMITIVES                        */
+  /* ========================================== */
+  
+  /* Spacing Primitives */
+  --pr-space-4: 4px;
+  --pr-space-8: 8px;
+  --pr-space-12: 12px;
+  --pr-space-16: 16px;
+  --pr-space-20: 20px;
+  --pr-space-24: 24px;
+  --pr-space-32: 32px;
+  --pr-space-40: 40px;
+  --pr-space-48: 48px;
+  --pr-space-64: 64px;
+  
+  /* Color Primitives */
+  --pr-color-obsidian: #080A0F;
+  --pr-color-slate: #121620;
+  --pr-color-technical: #1E2330;
+  --pr-color-white: #FFFFFF;
+  --pr-color-silver: #94A3B8;
+  --pr-color-green: #CCFF00;
+  --pr-color-cyan: #00E5FF; /* Pour la victoire visiteur */
+  --pr-color-red: #FF3B30;
+  --pr-color-orange: #FF9500;
+  
+  /* Font Families Primitives */
+  --pr-font-title: 'Space Grotesk', sans-serif;
+  --pr-font-body: 'Plus Jakarta Sans', sans-serif;
+
+  /* ========================================== */
+  /* LEVEL 2: SEMANTIC TOKENS                   */
+  /* ========================================== */
+  
+  /* Spacing System */
+  --space-xs: var(--pr-space-4);
+  --space-sm: var(--pr-space-8);
+  --space-ms: var(--pr-space-12);
+  --space-md: var(--pr-space-16);
+  --space-lg: var(--pr-space-24);
+  --space-xl: var(--pr-space-32);
+  --space-xxl: var(--pr-space-48);
+  --space-3xl: var(--pr-space-64);
+  
+  /* Colors */
+  --bg-obsidian: var(--pr-color-obsidian);
+  --bg-slate: var(--pr-color-slate);
+  --bg-technical: var(--pr-color-technical);
+  --text-white: var(--pr-color-white);
+  --text-silver: var(--pr-color-silver);
+  --neon-green: var(--pr-color-green);
+  --neon-red: var(--pr-color-red);
+  
+  --border-color: rgba(148, 163, 184, 0.12);
   --border-focus: rgba(204, 255, 0, 0.4);
   
-  --text-white: #FFFFFF;        /* Titres majeurs, chiffres clés */
-  --text-silver: #94A3B8;       /* Texte secondaire et explications */
-  
-  --neon-green: #CCFF00;        /* 10% - Accent principal */
   --neon-green-glow: rgba(204, 255, 0, 0.15);
   --neon-green-dim: rgba(204, 255, 0, 0.6);
-  
-  --neon-red: #FF3B30;          /* Alertes, paris à éviter */
   --neon-red-glow: rgba(255, 59, 48, 0.15);
+
+  /* Status Colors */
+  --status-win: var(--pr-color-green);
+  --status-draw: var(--pr-color-white);
+  --status-lose: var(--pr-color-red);
+  --status-info: var(--pr-color-silver);
   
-  --font-title: 'Space Grotesk', sans-serif;
-  --font-body: 'Plus Jakarta Sans', sans-serif;
+  /* Fonts */
+  --font-title: var(--pr-font-title);
+  --font-body: var(--pr-font-body);
   
+  /* Transitions */
   --transition-smooth: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+
+  /* ========================================== */
+  /* LEVEL 3: COMPONENT TOKENS                  */
+  /* ========================================== */
+  
+  /* 1X2 outcomes */
+  --outcome-home-color: var(--status-win);
+  --outcome-draw-color: var(--status-draw);
+  --outcome-away-color: var(--pr-color-cyan);
+  
+  /* Cards */
+  --card-padding: var(--space-lg);
+  --card-gap: var(--space-md);
+  
+  /* Layout Gaps */
+  --layout-gap-grid: var(--pr-space-20);
+}
+
+/* --- ACCESSIBILITY & MOTION GUIDELINES (ui-ux-pro-max) --- */
+button {
+  cursor: pointer;
+  transition: var(--transition-smooth);
+}
+
+:focus-visible {
+  outline: 2px solid var(--neon-green) !important;
+  outline-offset: 3px !important;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation-delay: -1ms !important;
+    animation-duration: 1ms !important;
+    animation-iteration-count: 1 !important;
+    background-attachment: initial !important;
+    scroll-behavior: auto !important;
+    transition-duration: 0s !important;
+    transition-delay: 0s !important;
+  }
 }
 
 /* --- RESET & BASIC STYLES --- */
@@ -78,7 +170,7 @@ a:hover {
   width: 100%;
   max-width: 1200px;
   margin: 0 auto;
-  padding: 0 24px;
+  padding: 0 var(--space-lg);
 }
 
 /* Alignement Flex & Grilles */
@@ -91,7 +183,7 @@ a:hover {
 .grid-cols-2 {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
-  gap: 20px;
+  gap: var(--layout-gap-grid);
 }
 
 @media (max-width: 768px) {
@@ -107,7 +199,7 @@ a:hover {
   background-color: var(--bg-slate);
   border: 1px solid var(--border-color);
   border-radius: 6px;
-  padding: 24px;
+  padding: var(--card-padding);
   position: relative;
   overflow: hidden;
   transition: var(--transition-smooth);
@@ -118,14 +210,34 @@ a:hover {
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
 }
 
+.card-tactical-interactive {
+  cursor: pointer;
+  transition: var(--transition-smooth);
+}
+
+.card-tactical-interactive:hover {
+  border-color: var(--neon-green) !important;
+  box-shadow: 0 0 15px rgba(204, 255, 0, 0.15) !important;
+  transform: translateY(-2px);
+}
+
+.status-dot-active {
+  animation: status-pulse 2s infinite ease-in-out;
+}
+
+@keyframes status-pulse {
+  0%, 100% { opacity: 0.4; }
+  50% { opacity: 1; }
+}
+
 /* En-têtes techniques de cartes */
 .card-header-tech {
   display: flex;
   justify-content: space-between;
   align-items: center;
   border-bottom: 1px solid var(--border-color);
-  padding-bottom: 12px;
-  margin-bottom: 20px;
+  padding-bottom: var(--space-ms);
+  margin-bottom: var(--layout-gap-grid);
 }
 
 .card-title-tech {
@@ -135,7 +247,7 @@ a:hover {
   color: var(--text-silver);
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: var(--space-sm);
 }
 
 .card-title-tech::before {
@@ -156,14 +268,14 @@ a:hover {
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.05em;
-  padding: 12px 24px;
+  padding: var(--space-ms) var(--space-lg);
   border: none;
   border-radius: 4px;
   cursor: pointer;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 10px;
+  gap: var(--space-sm);
   transition: var(--transition-smooth);
 }
 
@@ -187,13 +299,13 @@ a:hover {
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.05em;
-  padding: 12px 24px;
+  padding: var(--space-ms) var(--space-lg);
   border-radius: 4px;
   cursor: pointer;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 10px;
+  gap: var(--space-sm);
   transition: var(--transition-smooth);
 }
 
@@ -273,20 +385,20 @@ a:hover {
 }
 
 .distrib-dom {
-  background-color: var(--neon-green);
+  background-color: var(--outcome-home-color);
   border-top-left-radius: 3px;
   border-bottom-left-radius: 3px;
-  box-shadow: 0 0 12px var(--neon-green), inset -1px 0 0 rgba(0,0,0,0.2);
+  box-shadow: 0 0 12px var(--outcome-home-color), inset -1px 0 0 rgba(0,0,0,0.2);
 }
 
 .distrib-nul {
-  background-color: var(--text-silver);
+  background-color: var(--outcome-draw-color);
   box-shadow: inset -1px 0 0 rgba(0,0,0,0.2);
 }
 
 .distrib-ext {
-  background-color: var(--bg-technical);
-  border: 1px solid rgba(148, 163, 184, 0.3);
+  background-color: var(--outcome-away-color);
+  box-shadow: 0 0 12px var(--outcome-away-color), inset 1px 0 0 rgba(0,0,0,0.2);
   border-top-right-radius: 3px;
   border-bottom-right-radius: 3px;
 }

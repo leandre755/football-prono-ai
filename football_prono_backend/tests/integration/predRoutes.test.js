@@ -51,7 +51,7 @@ describe("Prediction Routes Integration Tests (API)", () => {
         .send({});
 
       expect(res.status).toBe(400);
-      expect(res.body.error).toBe("L'URL du match est requise.");
+      expect(res.body.error).toBe("Veuillez coller le lien d'un match 365Scores pour lancer l'analyse.");
     });
 
     test("should return 400 Bad Request if matchUrl is not a 365scores link", async () => {
@@ -61,7 +61,7 @@ describe("Prediction Routes Integration Tests (API)", () => {
         .send({ matchUrl: "https://google.com" });
 
       expect(res.status).toBe(400);
-      expect(res.body.error).toContain("URL invalide. Seules les URLs 365Scores");
+      expect(res.body.error).toContain("Ce lien ne provient pas de 365Scores. Vérifiez l'adresse et réessayez.");
     });
 
     test("should perform full analysis pipeline and save report on success", async () => {
@@ -115,7 +115,7 @@ describe("Prediction Routes Integration Tests (API)", () => {
         .set("Authorization", `Bearer ${token}`);
 
       expect(deleteRes.status).toBe(200);
-      expect(deleteRes.body.message).toContain("supprimée avec succès");
+      expect(deleteRes.body.message).toContain("Analyse supprimée.");
 
       // Vérifie qu'il a bien été effacé
       const updatedHistory = await request(app)

@@ -55,7 +55,7 @@ export default function Auth() {
       }
       navigate("/dashboard");
     } catch (err) {
-      setError(err.message || "Échec de l'authentification.");
+      setError(err.message || "Oups, la connexion a échoué. Réessayez.");
     } finally {
       setSubmitting(false);
     }

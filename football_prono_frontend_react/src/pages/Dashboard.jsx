@@ -70,12 +70,12 @@ export default function Dashboard() {
     setError("");
 
     if (!targetUrl) {
-      setError("Veuillez entrer ou sélectionner une URL.");
+      setError("Collez un lien de match 365Scores pour démarrer l'analyse.");
       return;
     }
 
     if (!targetUrl.includes("365scores.com")) {
-      setError("Format invalide. L'URL doit provenir du domaine 365scores.com.");
+      setError("Ce lien ne provient pas de 365Scores. Vérifiez l'adresse et réessayez.");
       return;
     }
 
@@ -96,12 +96,12 @@ export default function Dashboard() {
           navigate(`/report/${result.id}`, { state: { prediction: result } });
         },
         (err) => {
-          setError(err.message || "Une erreur est survenue lors de l'analyse.");
+          setError(err.message || "Oups, une erreur est survenue. Réessayez.");
           setLoading(false);
         }
       );
     } catch (err) {
-      setError(err.message || "Une erreur est survenue lors de l'analyse.");
+      setError(err.message || "Oups, une erreur est survenue. Réessayez.");
       setLoading(false);
     }
   };
@@ -134,27 +134,38 @@ export default function Dashboard() {
         backgroundColor: "rgba(18, 22, 32, 0.9)"
       }}>
         <div className="container flex-between" style={{ height: "65px" }}>
-          <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-            <div style={{ width: "8px", height: "8px", backgroundColor: "var(--neon-green)", borderRadius: "1px" }}></div>
+          <div style={{ display: "flex", alignItems: "center", gap: "var(--space-sm)" }}>
+            <div className="status-dot-active" style={{ width: "8px", height: "8px", backgroundColor: "var(--neon-green)", borderRadius: "50%", boxShadow: "0 0 8px var(--neon-green)" }}></div>
             <span style={{ fontFamily: "var(--font-title)", fontWeight: 700, fontSize: "16px", color: "var(--text-white)" }}>
               TACTICAL TERMINAL
             </span>
-            <span style={{ fontSize: "10px", padding: "2px 6px", border: "1px solid rgba(148, 163, 184, 0.2)", borderRadius: "3px", color: "var(--text-silver)" }}>
-              CONNECTÉ : {user?.username}
+            <span style={{
+              fontSize: "10px",
+              padding: "var(--space-xs) var(--space-sm)",
+              border: "1px solid rgba(204, 255, 0, 0.25)",
+              borderRadius: "3px",
+              color: "var(--neon-green)",
+              backgroundColor: "rgba(204, 255, 0, 0.05)",
+              display: "flex",
+              alignItems: "center",
+              gap: "var(--space-xs)"
+            }}>
+              <span className="status-dot-active" style={{ width: "5px", height: "5px", backgroundColor: "var(--neon-green)", borderRadius: "50%" }}></span>
+              TERMINAL ACTIF : {user?.username}
             </span>
           </div>
-          <button onClick={logout} className="btn-outline" style={{ padding: "6px 14px", fontSize: "11px", height: "35px" }}>
+          <button onClick={logout} className="btn-outline" style={{ padding: "var(--space-xs) var(--space-md)", fontSize: "11px", height: "35px" }}>
             <LogOut size={12} /> Déconnexion
           </button>
         </div>
       </header>
 
       {/* DASHBOARD PRINCIPAL */}
-      <main className="container" style={{ padding: "40px 24px", flex: 1 }}>
+      <main className="container" style={{ padding: "var(--pr-space-40) var(--space-lg)", flex: 1 }}>
         
         {/* TITRE DE BIENVENUE */}
-        <div style={{ marginBottom: "32px" }}>
-          <h1 style={{ fontSize: "28px", fontWeight: 700, marginBottom: "8px" }}>Interface d'Arbitrage Quantitatif</h1>
+        <div style={{ marginBottom: "var(--space-xl)" }}>
+          <h1 style={{ fontSize: "28px", fontWeight: 700, marginBottom: "var(--space-sm)" }}>Interface d'Arbitrage Quantitatif</h1>
           <p style={{ color: "var(--text-silver)" }}>
             Saisissez de nouvelles données brutes via URL ou exploitez les analyses pré-ciblées du jour.
           </p>
@@ -166,10 +177,10 @@ export default function Dashboard() {
             backgroundColor: "rgba(255, 59, 48, 0.05)",
             border: "1px solid var(--neon-red)",
             borderRadius: "4px",
-            padding: "16px",
-            marginBottom: "30px",
+            padding: "var(--space-md)",
+            marginBottom: "var(--space-xl)",
             display: "flex",
-            gap: "12px",
+            gap: "var(--space-ms)",
             alignItems: "center",
             color: "var(--text-white)"
           }}>
@@ -183,7 +194,7 @@ export default function Dashboard() {
 
         <div className="grid-dashboard">
           {/* COLONNE GAUCHE : ZONE DE SAISIE ET MATCHS CHAUDS */}
-          <div style={{ display: "flex", flexDirection: "column", gap: "30px" }}>
+          <div style={{ display: "flex", flexDirection: "column", gap: "var(--space-xl)" }}>
             
             {/* SAISIE URL */}
             <div className="card-tactical">
@@ -200,7 +211,7 @@ export default function Dashboard() {
                     backgroundColor: "#000000",
                     color: "var(--neon-green)",
                     border: "1px solid var(--neon-green)",
-                    padding: "4px 10px",
+                    padding: "var(--space-xs) var(--space-sm)",
                     borderRadius: "4px",
                     boxShadow: "0 0 8px rgba(34, 197, 94, 0.25)",
                     fontWeight: "bold",
@@ -221,10 +232,10 @@ export default function Dashboard() {
                   Source: 365Scores
                 </a>
               </div>
-              <p style={{ fontSize: "13px", marginBottom: "16px" }}>
+              <p style={{ fontSize: "13px", marginBottom: "var(--space-md)" }}>
                 Collez l'URL d'un match 365Scores. On agrège instantanément les stats de forme et on génère votre modélisation quantitative — sans biais, sans émotion.
               </p>
-              <div style={{ display: "flex", gap: "10px" }}>
+              <div style={{ display: "flex", gap: "var(--space-sm)" }}>
                 <input 
                   type="text"
                   className="input-tactical"
@@ -249,22 +260,21 @@ export default function Dashboard() {
                 <div className="card-title-tech">Analyses Prêtes en 1 Clic (Matchs Chauds)</div>
                 <span style={{ fontSize: "10px", color: "var(--neon-green)" }}>[IA PRÊTE]</span>
               </div>
-              <p style={{ fontSize: "13px", marginBottom: "20px" }}>
+              <p style={{ fontSize: "13px", marginBottom: "var(--layout-gap-grid)" }}>
                 Éliminez la friction de recherche. Lancez directement une simulation sur ces affiches majeures pré-vérifiées.
               </p>
-              <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+              <div style={{ display: "flex", flexDirection: "column", gap: "var(--space-ms)" }}>
                 {HOT_MATCHES.map(match => (
                   <div 
                     key={match.id}
                     onClick={() => handleAnalyze(match.url)}
-                    className="card-tactical"
+                    className="card-tactical card-tactical-interactive"
                     style={{
-                      padding: "16px",
+                      padding: "var(--space-md)",
                       backgroundColor: "var(--bg-obsidian)",
                       display: "flex",
                       justifyContent: "space-between",
                       alignItems: "center",
-                      cursor: "pointer",
                       borderStyle: "dashed"
                     }}
                   >
@@ -272,7 +282,7 @@ export default function Dashboard() {
                       <span style={{ fontSize: "10px", color: "var(--text-silver)", textTransform: "uppercase", display: "block" }}>
                         {match.league}
                       </span>
-                      <strong style={{ fontSize: "15px", color: "var(--text-white)", display: "flex", alignItems: "center", gap: "8px" }}>
+                      <strong style={{ fontSize: "15px", color: "var(--text-white)", display: "flex", alignItems: "center", gap: "var(--space-sm)" }}>
                         <TeamLogo teamName={match.home} size={20} />
                         {match.home} <span style={{ color: "var(--text-silver)", fontSize: "12px", fontWeight: "normal" }}>vs</span> {match.away}
                         <TeamLogo teamName={match.away} size={20} />
@@ -284,7 +294,7 @@ export default function Dashboard() {
                       fontWeight: 700,
                       display: "flex",
                       alignItems: "center",
-                      gap: "4px"
+                      gap: "var(--space-xs)"
                     }}>
                       LANCER <ArrowRight size={12} />
                     </span>
@@ -305,18 +315,18 @@ export default function Dashboard() {
             </div>
 
             {loadingHistory ? (
-              <div style={{ textAlign: "center", padding: "40px 0", color: "var(--text-silver)" }}>
+              <div style={{ textAlign: "center", padding: "var(--space-xxl) 0", color: "var(--text-silver)" }}>
                 Chargement de la base historique...
               </div>
             ) : history.length === 0 ? (
               <div style={{
                 textAlign: "center",
-                padding: "60px 20px",
+                padding: "var(--space-3xl) var(--layout-gap-grid)",
                 border: "1px dashed var(--border-color)",
                 borderRadius: "4px",
                 color: "var(--text-silver)"
               }}>
-                <FileText size={32} style={{ opacity: 0.3, marginBottom: "12px" }} />
+                <FileText size={32} style={{ opacity: 0.3, marginBottom: "var(--space-ms)" }} />
                 <p style={{ fontSize: "13px" }}>Aucune analyse dans l'historique.</p>
                 <p style={{ fontSize: "11px", opacity: 0.7 }}>Vos simulations s'afficheront ici.</p>
               </div>
@@ -324,20 +334,19 @@ export default function Dashboard() {
               <div style={{
                 display: "flex",
                 flexDirection: "column",
-                gap: "12px",
+                gap: "var(--space-ms)",
                 overflowY: "auto",
                 maxHeight: "450px",
-                paddingRight: "4px"
+                paddingRight: "var(--space-xs)"
               }}>
                 {history.map(item => (
                   <div 
                     key={item.id}
                     onClick={() => handleHistoryClick(item)}
-                    className="card-tactical"
+                    className="card-tactical card-tactical-interactive"
                     style={{
-                      padding: "16px",
+                      padding: "var(--space-md)",
                       backgroundColor: "var(--bg-obsidian)",
-                      cursor: "pointer",
                       display: "flex",
                       justifyContent: "space-between",
                       alignItems: "center"
@@ -347,7 +356,7 @@ export default function Dashboard() {
                       <span style={{
                         display: "flex",
                         alignItems: "center",
-                        gap: "6px",
+                        gap: "var(--space-xs)",
                         fontSize: "9px",
                         textTransform: "uppercase",
                         color: item.prediction_json.niveau_de_confiance === "eleve" ? "var(--neon-green)" : "var(--text-silver)"
@@ -355,7 +364,7 @@ export default function Dashboard() {
                         <Zap size={10} fill={item.prediction_json.niveau_de_confiance === "eleve" ? "var(--neon-green)" : "none"} />
                         Confiance {item.prediction_json.niveau_de_confiance}
                       </span>
-                      <strong style={{ fontSize: "13px", color: "var(--text-white)", display: "flex", alignItems: "center", gap: "6px", marginTop: "4px" }}>
+                      <strong style={{ fontSize: "13px", color: "var(--text-white)", display: "flex", alignItems: "center", gap: "var(--space-xs)", marginTop: "var(--space-xs)" }}>
                         <TeamLogo teamName={item.equipe_domicile} size={16} />
                         {item.equipe_domicile} - {item.equipe_exterieur}
                         <TeamLogo teamName={item.equipe_exterieur} size={16} />
@@ -371,7 +380,7 @@ export default function Dashboard() {
                         border: "none",
                         color: "rgba(148, 163, 184, 0.4)",
                         cursor: "pointer",
-                        padding: "6px",
+                        padding: "var(--space-xs)",
                         transition: "var(--transition-smooth)"
                       }}
                       onMouseOver={(e) => e.currentTarget.style.color = "var(--neon-red)"}
@@ -391,7 +400,7 @@ export default function Dashboard() {
       {/* FOOTER */}
       <footer style={{
         borderTop: "1px solid var(--border-color)",
-        padding: "20px 0",
+        padding: "var(--layout-gap-grid) 0",
         backgroundColor: "rgba(8, 10, 15, 0.9)",
         fontSize: "11px",
         color: "rgba(148, 163, 184, 0.4)"

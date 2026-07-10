@@ -1,65 +1,132 @@
 /**
- * Module de résolution de logos d'équipes (V1.1)
+ * Module de résolution de logos d'équipes (V2.0)
  *
  * Résout le logo actuel et officiel d'une équipe de football.
  * Fonctionnement :
- * 1. Normalisation du nom (gestion des variantes, ex: "Paris SG", "PSG" -> "psg").
- * 2. Vérification dans un dictionnaire local (mapping léger des tops clubs avec leurs logos officiels et récents).
+ * 1. Normalisation du nom (accents, apostrophes, variantes).
+ * 2. Vérification dans un dictionnaire local (TheSportsDB, source fiable sans CORS).
  * 3. Fallback vers un avatar générique neutre si l'équipe n'est pas dans le dictionnaire.
  *
- * Ce module garantit le retour synchrone d'une URL de logo toujours actuelle.
+ * V2 : Correction du bug CORS/hotlink Wikimedia — migration vers TheSportsDB badges.
+ *       Ajout de la normalisation Unicode (accents) et des apostrophes typographiques.
  */
 
-// Mapping des logos officiels récents (SVG ou PNG haute qualité via Wikimedia)
+// Mapping des logos officiels — source TheSportsDB (pas de CORS, URLs stables)
 const TOP_CLUBS_LOGOS = {
   // France
-  'psg': 'https://upload.wikimedia.org/wikipedia/fr/thumb/8/86/Paris_Saint-Germain_Logo.svg/250px-Paris_Saint-Germain_Logo.svg.png',
-  'marseille': 'https://upload.wikimedia.org/wikipedia/fr/thumb/4/43/Logo_Olympique_de_Marseille.svg/200px-Logo_Olympique_de_Marseille.svg.png',
-  'lyon': 'https://upload.wikimedia.org/wikipedia/fr/thumb/e/e2/Olympique_lyonnais_%28logo%29.svg/200px-Olympique_lyonnais_%28logo%29.svg.png',
-  'monaco': 'https://upload.wikimedia.org/wikipedia/fr/thumb/d/d3/Logo_AS_Monaco_FC.svg/200px-Logo_AS_Monaco_FC.svg.png',
-  'lille': 'https://upload.wikimedia.org/wikipedia/fr/thumb/6/62/Logo_LOSC_Lille_2018.svg/200px-Logo_LOSC_Lille_2018.svg.png',
-  'lens': 'https://upload.wikimedia.org/wikipedia/fr/thumb/2/2c/Logo_RC_Lens_2014.svg/200px-Logo_RC_Lens_2014.svg.png',
-  'rennes': 'https://upload.wikimedia.org/wikipedia/fr/thumb/e/e9/Logo_Stade_Rennais_FC.svg/200px-Logo_Stade_Rennais_FC.svg.png',
-  
-  // Angleterre
-  'arsenal': 'https://upload.wikimedia.org/wikipedia/fr/thumb/5/53/Arsenal_FC.svg/200px-Arsenal_FC.svg.png',
-  'manchester city': 'https://upload.wikimedia.org/wikipedia/fr/thumb/b/ba/Badge_Manchester_City_FC_2016.svg/200px-Badge_Manchester_City_FC_2016.svg.png',
-  'liverpool': 'https://upload.wikimedia.org/wikipedia/fr/thumb/5/54/Logo_FC_Liverpool.svg/200px-Logo_FC_Liverpool.svg.png',
-  'manchester united': 'https://upload.wikimedia.org/wikipedia/fr/thumb/b/b9/Logo_Manchester_United.svg/200px-Logo_Manchester_United.svg.png',
-  'chelsea': 'https://upload.wikimedia.org/wikipedia/fr/thumb/5/51/Logo_Chelsea.svg/200px-Logo_Chelsea.svg.png',
-  'tottenham': 'https://upload.wikimedia.org/wikipedia/fr/thumb/b/b4/Tottenham_Hotspur.svg/200px-Tottenham_Hotspur.svg.png',
-  'newcastle': 'https://upload.wikimedia.org/wikipedia/fr/thumb/6/63/Newcastle_United_Logo.svg/200px-Newcastle_United_Logo.svg.png',
-  
-  // Espagne
-  'real madrid': 'https://upload.wikimedia.org/wikipedia/fr/thumb/c/c7/Logo_Real_Madrid.svg/200px-Logo_Real_Madrid.svg.png',
-  'barcelona': 'https://upload.wikimedia.org/wikipedia/fr/thumb/a/a1/Logo_FC_Barcelona.svg/200px-Logo_FC_Barcelona.svg.png',
-  'atletico madrid': 'https://upload.wikimedia.org/wikipedia/fr/thumb/c/c1/Atletico_Madrid_logo_2017.svg/200px-Atletico_Madrid_logo_2017.svg.png',
-  'sevilla': 'https://upload.wikimedia.org/wikipedia/fr/thumb/6/6d/Logo_Sevilla_FC.svg/200px-Logo_Sevilla_FC.svg.png',
-  
-  // Italie
-  'juventus': 'https://upload.wikimedia.org/wikipedia/commons/thumb/1/15/Juventus_FC_2017_icon_%28black%29.svg/200px-Juventus_FC_2017_icon_%28black%29.svg.png',
-  'inter': 'https://upload.wikimedia.org/wikipedia/commons/thumb/0/05/FC_Internazionale_Milano_2021.svg/200px-FC_Internazionale_Milano_2021.svg.png',
-  'ac milan': 'https://upload.wikimedia.org/wikipedia/commons/thumb/d/d0/Logo_of_AC_Milan.svg/200px-Logo_of_AC_Milan.svg.png',
-  'napoli': 'https://upload.wikimedia.org/wikipedia/commons/thumb/2/28/S.S.C._Napoli_logo.svg/200px-S.S.C._Napoli_logo.svg.png',
-  'roma': 'https://upload.wikimedia.org/wikipedia/fr/thumb/9/9e/Logo_AS_Roma_2013.svg/200px-Logo_AS_Roma_2013.svg.png',
-  
-  // Allemagne
-  'bayern munich': 'https://upload.wikimedia.org/wikipedia/commons/thumb/1/1b/FC_Bayern_M%C3%BCnchen_logo_%282017%29.svg/200px-FC_Bayern_M%C3%BCnchen_logo_%282017%29.svg.png',
-  'dortmund': 'https://upload.wikimedia.org/wikipedia/commons/thumb/6/67/Borussia_Dortmund_logo.svg/200px-Borussia_Dortmund_logo.svg.png',
-  'bayer leverkusen': 'https://upload.wikimedia.org/wikipedia/fr/thumb/3/30/Bayer_Leverkusen_%28logo%29.svg/200px-Bayer_Leverkusen_%28logo%29.svg.png',
-  'rb leipzig': 'https://upload.wikimedia.org/wikipedia/en/thumb/0/04/RB_Leipzig_2014_logo.svg/200px-RB_Leipzig_2014_logo.svg.png',
+  'psg': 'https://www.thesportsdb.com/images/media/team/badge/rwqrrq1473504808.png',
+  'marseille': 'https://www.thesportsdb.com/images/media/team/badge/yvwtpq1473504472.png',
+  'lyon': 'https://www.thesportsdb.com/images/media/team/badge/xrxyxr1421400560.png',
+  'monaco': 'https://www.thesportsdb.com/images/media/team/badge/819x2x1547281809.png',
+  'lille': 'https://www.thesportsdb.com/images/media/team/badge/2giinf1534175962.png',
+  'lens': 'https://www.thesportsdb.com/images/media/team/badge/t8e2ib1597063147.png',
+  'rennes': 'https://www.thesportsdb.com/images/media/team/badge/ypwvxy1473504827.png',
 
-  // Sélections Nationales
-  'allemagne': 'https://upload.wikimedia.org/wikipedia/commons/thumb/3/38/DFB-Logo_2011.svg/200px-DFB-Logo_2011.svg.png',
-  'cote d\'ivoire': 'https://upload.wikimedia.org/wikipedia/commons/thumb/f/fe/Flag_of_C%C3%B4te_d%27Ivoire.svg/200px-Flag_of_C%C3%B4te_d%27Ivoire.svg.png'
+  // Angleterre
+  'arsenal': 'https://www.thesportsdb.com/images/media/team/badge/uyhbfe1612467038.png',
+  'manchester city': 'https://www.thesportsdb.com/images/media/team/badge/vwpvry1467462651.png',
+  'liverpool': 'https://www.thesportsdb.com/images/media/team/badge/uvxuqq1448813372.png',
+  'manchester united': 'https://www.thesportsdb.com/images/media/team/badge/xzqdr11517660252.png',
+  'chelsea': 'https://www.thesportsdb.com/images/media/team/badge/yvwvtu1448813215.png',
+  'tottenham': 'https://www.thesportsdb.com/images/media/team/badge/wfe1pv1604137704.png',
+  'newcastle': 'https://www.thesportsdb.com/images/media/team/badge/2wsu1z1534012789.png',
+
+  // Espagne
+  'real madrid': 'https://www.thesportsdb.com/images/media/team/badge/vr67ah1511020460.png',
+  'barcelona': 'https://www.thesportsdb.com/images/media/team/badge/ch4em91691764556.png',
+  'atletico madrid': 'https://www.thesportsdb.com/images/media/team/badge/jaqwos1711878429.png',
+  'sevilla': 'https://www.thesportsdb.com/images/media/team/badge/yrxrrx1420751903.png',
+
+  // Italie
+  'juventus': 'https://www.thesportsdb.com/images/media/team/badge/dd6e3k1547281930.png',
+  'inter': 'https://www.thesportsdb.com/images/media/team/badge/wqutut1614191397.png',
+  'ac milan': 'https://www.thesportsdb.com/images/media/team/badge/xutwtv1420400271.png',
+  'napoli': 'https://www.thesportsdb.com/images/media/team/badge/txtuws1421838498.png',
+  'roma': 'https://www.thesportsdb.com/images/media/team/badge/yvssqq1448813153.png',
+
+  // Allemagne
+  'bayern munich': 'https://www.thesportsdb.com/images/media/team/badge/rfsf6h1502212748.png',
+  'dortmund': 'https://www.thesportsdb.com/images/media/team/badge/yrvpsy1421404060.png',
+  'bayer leverkusen': 'https://www.thesportsdb.com/images/media/team/badge/mxig4h1551800693.png',
+  'rb leipzig': 'https://www.thesportsdb.com/images/media/team/badge/gvoy2x1510231766.png',
+
+  // Sélections Nationales — drapeaux via flagcdn (fiable, pas de CORS)
+  'allemagne': 'https://flagcdn.com/w160/de.png',
+  'france': 'https://flagcdn.com/w160/fr.png',
+  'espagne': 'https://flagcdn.com/w160/es.png',
+  'italie': 'https://flagcdn.com/w160/it.png',
+  'angleterre': 'https://flagcdn.com/w160/gb-eng.png',
+  'bresil': 'https://flagcdn.com/w160/br.png',
+  'argentine': 'https://flagcdn.com/w160/ar.png',
+  'portugal': 'https://flagcdn.com/w160/pt.png',
+  'belgique': 'https://flagcdn.com/w160/be.png',
+  'pays-bas': 'https://flagcdn.com/w160/nl.png',
+  'cote d\'ivoire': 'https://flagcdn.com/w160/ci.png',
+  'senegal': 'https://flagcdn.com/w160/sn.png',
+  'cameroun': 'https://flagcdn.com/w160/cm.png',
+  'maroc': 'https://flagcdn.com/w160/ma.png',
+  'tunisie': 'https://flagcdn.com/w160/tn.png',
+  'algerie': 'https://flagcdn.com/w160/dz.png',
+  'nigeria': 'https://flagcdn.com/w160/ng.png',
+  'egypte': 'https://flagcdn.com/w160/eg.png',
+  'japon': 'https://flagcdn.com/w160/jp.png',
+  'coree du sud': 'https://flagcdn.com/w160/kr.png',
+  'etats-unis': 'https://flagcdn.com/w160/us.png',
+  'mexique': 'https://flagcdn.com/w160/mx.png',
+  'colombie': 'https://flagcdn.com/w160/co.png',
+  'uruguay': 'https://flagcdn.com/w160/uy.png',
+  'croatie': 'https://flagcdn.com/w160/hr.png',
+  'suisse': 'https://flagcdn.com/w160/ch.png',
+  'pologne': 'https://flagcdn.com/w160/pl.png',
+  'turquie': 'https://flagcdn.com/w160/tr.png',
+  'autriche': 'https://flagcdn.com/w160/at.png',
+  'danemark': 'https://flagcdn.com/w160/dk.png',
+  'suede': 'https://flagcdn.com/w160/se.png',
+  'norvege': 'https://flagcdn.com/w160/no.png',
+  'ecosse': 'https://flagcdn.com/w160/gb-sct.png',
+  'pays de galles': 'https://flagcdn.com/w160/gb-wls.png',
+  'ghana': 'https://flagcdn.com/w160/gh.png',
+  'mali': 'https://flagcdn.com/w160/ml.png'
 };
 
-// Aliases pour normaliser les variantes de noms (désambiguïsation) vers une clé de base
+// Aliases : toutes les variantes de noms (y compris avec accents) vers la clé normalisée
 const TEAM_ALIASES = {
+  // Sélections nationales
   'germany': 'allemagne',
-  'côte d\'ivoire': 'cote d\'ivoire',
-  'côte d’ivoire': 'cote d\'ivoire',
+  'deutschland': 'allemagne',
   'ivory coast': 'cote d\'ivoire',
+  'costa de marfil': 'cote d\'ivoire',
+  'spain': 'espagne',
+  'italy': 'italie',
+  'england': 'angleterre',
+  'brazil': 'bresil',
+  'argentina': 'argentine',
+  'belgium': 'belgique',
+  'netherlands': 'pays-bas',
+  'holland': 'pays-bas',
+  'south korea': 'coree du sud',
+  'united states': 'etats-unis',
+  'usa': 'etats-unis',
+  'croatia': 'croatie',
+  'switzerland': 'suisse',
+  'poland': 'pologne',
+  'turkey': 'turquie',
+  'austria': 'autriche',
+  'denmark': 'danemark',
+  'sweden': 'suede',
+  'norway': 'norvege',
+  'scotland': 'ecosse',
+  'wales': 'pays de galles',
+  'morocco': 'maroc',
+  'tunisia': 'tunisie',
+  'algeria': 'algerie',
+  'egypt': 'egypte',
+  'japan': 'japon',
+  'colombia': 'colombie',
+  'mexico': 'mexique',
+  'cameroon': 'cameroun',
+
+  // Clubs
   'paris sg': 'psg',
   'paris saint germain': 'psg',
   'paris saint-germain': 'psg',
@@ -74,7 +141,7 @@ const TEAM_ALIASES = {
   'rcl': 'lens',
   'racing club de lens': 'lens',
   'stade rennais': 'rennes',
-  
+
   'man utd': 'manchester united',
   'man united': 'manchester united',
   'mufc': 'manchester united',
@@ -83,55 +150,98 @@ const TEAM_ALIASES = {
   'spurs': 'tottenham',
   'tottenham hotspur': 'tottenham',
   'newcastle united': 'newcastle',
-  
+
   'real': 'real madrid',
   'real madrid cf': 'real madrid',
   'barca': 'barcelona',
   'fc barcelona': 'barcelona',
+  'barcelone': 'barcelona',
+  'fc barcelone': 'barcelona',
   'atletico': 'atletico madrid',
-  'atlético madrid': 'atletico madrid',
+  'atletico de madrid': 'atletico madrid',
   'fc sevilla': 'sevilla',
-  
+  'seville': 'sevilla',
+
   'juve': 'juventus',
   'juventus fc': 'juventus',
   'inter milan': 'inter',
+  'internazionale': 'inter',
   'milan ac': 'ac milan',
   'milan': 'ac milan',
   'ssc napoli': 'napoli',
   'as roma': 'roma',
-  
+
   'bayern': 'bayern munich',
   'fc bayern munich': 'bayern munich',
-  'fc bayern münchen': 'bayern munich',
+  'fc bayern munchen': 'bayern munich',
   'bvb': 'dortmund',
   'borussia dortmund': 'dortmund',
   'leverkusen': 'bayer leverkusen',
   'leipzig': 'rb leipzig'
 };
 
-// Simple in-memory cache pour ne pas recalculer inutilement (même si c'est rapide en local)
+// Cache mémoire pour éviter les recalculs
 const memoryCache = new Map();
 
 /**
- * Nettoie et normalise le nom de l'équipe pour faciliter le matching.
+ * Supprime les diacritiques (accents) d'une chaîne.
+ * "Côte d'Ivoire" → "Cote d'Ivoire"
+ * "München" → "Munchen"
+ *
+ * Invariant : retourne toujours une chaîne (vide si input vide).
  */
-function normalizeName(name) {
-  if (!name) return '';
-  let cleanName = name.toLowerCase().trim();
-  // Nettoyage de préfixes/suffixes communs qui peuvent gêner le matching exact
-  cleanName = cleanName.replace(/\b(fc|cf|ac|as|sc)\b/g, '').trim();
-  // Remplacer les multi-espaces
-  cleanName = cleanName.replace(/\s+/g, ' ');
-  return cleanName;
+function removeDiacritics(str) {
+  if (!str) return '';
+  return str.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
 }
 
 /**
- * Obtient l'URL du logo officiel actuel de l'équipe.
- * @param {string} teamName - Le nom brut de l'équipe.
- * @param {object} options - Options (ex: size, etc. non utilisées en V1 mais prêtes).
- * @returns {string} URL de l'image (SVG, PNG ou Fallback)
+ * Normalise les apostrophes typographiques (', ʼ, `) vers l'apostrophe droite standard (').
+ *
+ * Invariant : retourne toujours une chaîne.
  */
-export function getTeamLogo(teamName, _options = {}) {
+function normalizeApostrophes(str) {
+  if (!str) return '';
+  return str.replace(/[\u2018\u2019\u201A\u201B\u0060\u02BC\u2032]/g, "'");
+}
+
+/**
+ * Nettoie et normalise le nom de l'équipe pour le matching.
+ * Pipeline : lowercase → apostrophes → accents → préfixes clubs → multi-espaces.
+ *
+ * Invariant : retourne toujours une chaîne non-vide si l'input est non-vide.
+ */
+function normalizeName(name) {
+  if (!name) return '';
+  let clean = name.toLowerCase().trim();
+  clean = normalizeApostrophes(clean);
+  clean = removeDiacritics(clean);
+  // Retirer les préfixes/suffixes de clubs courants
+  clean = clean.replace(/\b(fc|cf|sc)\b/g, '').trim();
+  // Compacter les espaces multiples
+  clean = clean.replace(/\s+/g, ' ');
+  return clean;
+}
+
+/**
+ * Génère l'URL d'un avatar générique stylisé pour l'équipe.
+ * @param {string} teamName - Nom brut de l'équipe.
+ * @returns {string} URL ui-avatars
+ */
+export function getFallbackAvatar(teamName) {
+  if (!teamName) return '';
+  const shortName = encodeURIComponent(teamName.substring(0, 3));
+  return `https://ui-avatars.com/api/?name=${shortName}&background=1e2330&color=ccff00&bold=true&font-size=0.4&size=128`;
+}
+
+/**
+ * Obtient l'URL du logo officiel de l'équipe (synchrone).
+ * @param {string} teamName - Le nom brut de l'équipe.
+ * @returns {string} URL de l'image (PNG) ou avatar fallback
+ *
+ * Invariant : retourne toujours une chaîne non-vide si teamName est non-vide.
+ */
+export function getTeamLogo(teamName) {
   if (!teamName) return '';
 
   const cacheKey = teamName.toLowerCase().trim();
@@ -139,21 +249,30 @@ export function getTeamLogo(teamName, _options = {}) {
     return memoryCache.get(cacheKey);
   }
 
-  // 1. Essai de normalisation agressive
+  // 1. Normalisation agressive (accents, apostrophes, préfixes)
   const normalized = normalizeName(teamName);
-  
-  // 2. Chercher dans les alias
-  const aliasKey = TEAM_ALIASES[normalized] || TEAM_ALIASES[cacheKey] || normalized || cacheKey;
-  
-  // 3. Chercher dans les logos officiels
-  let logoUrl = TOP_CLUBS_LOGOS[aliasKey];
 
-  // 4. Si introuvable, génération d'un placeholder (neutre, esthétique)
-  if (!logoUrl) {
-    // Ex: avatar stylisé avec l'initiale ou les deux premières lettres
-    // On utilise l'API ui-avatars, très rapide et sans dépendance
-    const shortName = encodeURIComponent(teamName.substring(0, 3));
-    logoUrl = `https://ui-avatars.com/api/?name=${shortName}&background=1e2330&color=ccff00&bold=true&font-size=0.4&size=128`;
+  // 2. Essayer dans cet ordre : nom brut lowercase → normalisé → alias du brut → alias du normalisé
+  const candidates = [cacheKey, normalized];
+  let resolvedKey = null;
+
+  for (const candidate of candidates) {
+    if (TOP_CLUBS_LOGOS[candidate]) {
+      resolvedKey = candidate;
+      break;
+    }
+    const aliasTarget = TEAM_ALIASES[candidate];
+    if (aliasTarget && TOP_CLUBS_LOGOS[aliasTarget]) {
+      resolvedKey = aliasTarget;
+      break;
+    }
+  }
+
+  let logoUrl;
+  if (resolvedKey) {
+    logoUrl = TOP_CLUBS_LOGOS[resolvedKey];
+  } else {
+    logoUrl = getFallbackAvatar(teamName);
   }
 
   memoryCache.set(cacheKey, logoUrl);
