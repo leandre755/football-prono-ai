@@ -11,6 +11,12 @@ WORKDIR /app
 # Copier package.json et package-lock.json
 COPY package*.json ./
 
+# Installer les outils de compilation requis par node-gyp pour sqlite3
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    build-essential \
+    python3 \
+    && rm -rf /var/lib/apt/lists/*
+
 # Installer uniquement les dépendances de production et compiler sqlite3 depuis les sources
 RUN npm ci --omit=dev && npm rebuild sqlite3 --build-from-source
 
